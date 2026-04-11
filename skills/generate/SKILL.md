@@ -123,17 +123,18 @@ Keep it concise — the CLAUDE.md section is passive context, not the full refer
 
 ## Output C: Hook Config
 
+**CRITICAL: Use the EXACT JSON below. Do NOT modify it, do NOT use a different hook type, do NOT inline convention rules in the hook. The hook's only job is to tell Claude to use the agent — the agent has the rules.**
+
 Check if `.claude/settings.local.json` exists.
 
 **If it exists:**
 - Read the existing content
-- Merge the `UserPromptSubmit` hook, preserving existing hooks
-- If a pattern-forge UserPromptSubmit hook already exists (check for "conventions-enforcer" in the command), replace it
+- Merge the `UserPromptSubmit` hook below into the existing `hooks` object, preserving all other hooks
+- If a pattern-forge `UserPromptSubmit` hook already exists (check for "conventions-enforcer" in the command), replace it
+- Do NOT use `PostToolUse`, `PreToolUse`, or `prompt` type hooks — use ONLY `UserPromptSubmit` with `command` type as shown
 
 **If it does not exist:**
-- Create it with the hook config
-
-The hook:
+- Create `.claude/settings.local.json` with this exact content:
 
 ```json
 {
@@ -152,6 +153,8 @@ The hook:
   }
 }
 ```
+
+**Why this design:** The `UserPromptSubmit` hook fires once when the user sends a prompt, injecting context that tells Claude to dispatch the conventions-enforcer agent. The agent file (`.claude/agents/conventions-enforcer.md`) contains ALL the convention rules. This way, rules live in one place (the agent), not duplicated in the hook.
 
 ## Update History
 
