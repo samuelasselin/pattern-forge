@@ -56,14 +56,15 @@ fi
 # -- Extract the snapshot deps from history.json ----------------------------
 # The dependency_snapshot field looks like:
 #   "dependency_snapshot": ["dep1", "dep2", ...]
-# We extract everything between the brackets of that array.
+# We need the LAST occurrence (most recent run), not the first.
 snapshot_block="$(
   awk '
-    /\"dependency_snapshot\"/ { found=1 }
+    /\"dependency_snapshot\"/ { found=1; buf="" }
     found {
       buf = buf $0
-      if (gsub(/\[/, "[", buf) > 0 && gsub(/\]/, "]", buf) > 0) { print buf; exit }
+      if (index(buf, "]") > 0) { last = buf; found=0; buf="" }
     }
+    END { if (last != "") print last }
   ' "$HISTORY"
 )"
 
