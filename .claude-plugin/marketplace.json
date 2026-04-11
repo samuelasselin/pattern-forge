@@ -1,0 +1,15 @@
+{
+  "name": "pattern-forge",
+  "description": "Claude Code plugin that detects project dependencies and generates tailored convention-enforcing agents",
+  "owner": {
+    "name": "Samuel Asselin"
+  },
+  "plugins": [
+    {
+      "name": "pattern-forge",
+      "description": "Detect project dependencies and generate tailored convention-enforcing agents with industry best practices",
+      "source": ".",
+      "category": "development"
+    }
+  ]
+}
