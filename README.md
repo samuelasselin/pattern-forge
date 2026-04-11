@@ -22,6 +22,8 @@ A Claude Code plugin that detects your project's installed dependencies, propose
 
 ## Quick Start
 
+/plugin marketplace add samuelasselin/pattern-forge
+
 1. Create your project and install your base dependencies
 2. Run `/pattern-forge:init`
 3. Answer the pattern selection questions
