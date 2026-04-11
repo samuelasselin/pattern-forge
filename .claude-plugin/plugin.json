@@ -1,0 +1,16 @@
+{
+  "name": "pattern-forge",
+  "description": "Detect project dependencies and generate tailored convention-enforcing agents with industry best practices",
+  "version": "1.0.0",
+  "author": {
+    "name": "Samuel Asselin"
+  },
+  "license": "MIT",
+  "keywords": [
+    "conventions",
+    "design-patterns",
+    "scaffolding",
+    "agents",
+    "best-practices"
+  ]
+}
