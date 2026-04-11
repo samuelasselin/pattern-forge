@@ -67,10 +67,12 @@ For EACH pattern in `design-choices.json`, generate a numbered convention sectio
 - The pattern name and category as a heading
 - A clear explanation of the pattern
 - Code examples specific to the user's library combination
-- Do's and don'ts
+- Concrete rules for how to apply the pattern correctly (e.g., "DO use Flowbite components, DON'T create custom UI when Flowbite has an equivalent")
 - File naming conventions if applicable
 
 Code examples must be realistic — use the actual libraries the user has installed, not pseudocode.
+
+**IMPORTANT: Only include ACCEPTED patterns.** Do NOT reference rejected suggestions, declined libraries, or skipped categories in the agent. Never write rules like "do not use X" or "X was declined." The agent should only enforce what was chosen. Rejection tracking is handled separately by the update skill via `rejections.json` — the agent has no role in it.
 
 **4. Self-Verification Checklist**
 Generate a checklist with one item per chosen pattern:
