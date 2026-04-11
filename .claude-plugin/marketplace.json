@@ -8,7 +8,7 @@
     {
       "name": "pattern-forge",
       "description": "Detect project dependencies and generate tailored convention-enforcing agents with industry best practices",
-      "source": ".",
+      "source": "./",
       "category": "development"
     }
   ]
