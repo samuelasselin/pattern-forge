@@ -20,9 +20,22 @@ A Claude Code plugin that detects your project's installed dependencies, propose
 | generate | `/pattern-forge:generate` | Produce agent + hook + CLAUDE.md |
 | update | `/pattern-forge:update` | Detect changes, review and approve updates |
 
-## Quick Start
+## Installation
 
+In Claude Code, run:
+
+```
 /plugin marketplace add samuelasselin/pattern-forge
+/plugin install pattern-forge@samuelasselin-pattern-forge
+```
+
+To update to the latest version:
+
+```
+/plugin marketplace update samuelasselin-pattern-forge
+```
+
+## Quick Start
 
 1. Create your project and install your base dependencies
 2. Run `/pattern-forge:init`
