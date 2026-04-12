@@ -16,6 +16,24 @@ The project must have been initialized with pattern-forge. These files must exis
 
 If any are missing, tell the user to run `/pattern-forge:init` first.
 
+## Prerequisite: Context7 MCP
+
+Before running the update, verify that the Context7 MCP server is available. Attempt to call `resolve-library-id` with the query "react".
+
+**If context7 MCP is not available or the call fails**, display this message and stop immediately:
+
+```
+Pattern Forge requires the Context7 MCP server for documentation lookups.
+
+Install it by adding this to your Claude Code MCP config:
+
+  context7 — https://github.com/upstash/context7
+
+Then restart Claude Code and run /pattern-forge:update again.
+```
+
+Do NOT fall back to detection without documentation. Context7 is a hard requirement.
+
 ## Step 1: Re-Run Detection
 
 Perform the same analysis as the detect skill:
@@ -26,7 +44,9 @@ Perform the same analysis as the detect skill:
    ```
 2. Read the primary dependency file
 3. Parse all dependencies
-4. Analyze in three tiers (A: dependency-driven, B: complementary, C: best practices)
+4. Classify dependencies into key libraries vs dev tools
+5. For each key library, query documentation via context7 MCP (`resolve-library-id` then `query-docs`) asking about design patterns, best practices, and integration with other detected libraries
+6. Analyze in three tiers using documentation + your knowledge (A: dependency-driven, B: complementary, C: best practices)
 
 Save the new detection report to `.claude/pattern-forge/detection-report.json` (overwriting the previous one).
 
@@ -128,7 +148,7 @@ If any changes were accepted:
 2. Regenerate the three outputs using the same logic as the generate skill:
    - `.claude/agents/conventions-enforcer.md` — regenerated with full pattern set
    - `CLAUDE.md` — pattern-forge section replaced between markers
-   - `.claude/settings.local.json` — hook preserved as-is (doesn't change)
+   - `.claude/settings.json` — hook preserved as-is (doesn't change)
 3. Append a new run to `history.json`:
 
 ```json
