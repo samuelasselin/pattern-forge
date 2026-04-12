@@ -8,7 +8,7 @@ description: Use after running design to generate the conventions-enforcing agen
 Read the design choices and produce three outputs:
 1. A conventions-enforcing agent at `.claude/agents/conventions-enforcer.md`
 2. A conventions section appended to `CLAUDE.md`
-3. A UserPromptSubmit hook in `.claude/settings.local.json`
+3. A UserPromptSubmit hook in `.claude/settings.json` (committable to git for team sharing)
 
 ## Prerequisites
 
@@ -125,16 +125,24 @@ Keep it concise — the CLAUDE.md section is passive context, not the full refer
 
 **CRITICAL: Use the EXACT JSON below. Do NOT modify it, do NOT use a different hook type, do NOT inline convention rules in the hook. The hook's only job is to tell Claude to use the agent — the agent has the rules.**
 
-Check if `.claude/settings.local.json` exists.
+### Migration Check
+
+First, check if `.claude/settings.local.json` exists and contains a pattern-forge UserPromptSubmit hook (search for "conventions-enforcer" in the file). If found:
+1. Remove the hook entry from `.claude/settings.local.json`
+2. Log: "Migrated hook from .claude/settings.local.json to .claude/settings.json for team sharing."
+
+### Write Hook
+
+Check if `.claude/settings.json` exists.
 
 **If it exists:**
 - Read the existing content
-- Merge the `UserPromptSubmit` hook below into the existing `hooks` object, preserving all other hooks
+- Merge the `UserPromptSubmit` hook below into the existing `hooks` object, preserving all other hooks and settings
 - If a pattern-forge `UserPromptSubmit` hook already exists (check for "conventions-enforcer" in the command), replace it
 - Do NOT use `PostToolUse`, `PreToolUse`, or `prompt` type hooks — use ONLY `UserPromptSubmit` with `command` type as shown
 
 **If it does not exist:**
-- Create `.claude/settings.local.json` with this exact content:
+- Create `.claude/settings.json` with this exact content:
 
 ```json
 {
@@ -154,7 +162,7 @@ Check if `.claude/settings.local.json` exists.
 }
 ```
 
-**Why this design:** The `UserPromptSubmit` hook fires once when the user sends a prompt, injecting context that tells Claude to dispatch the conventions-enforcer agent. The agent file (`.claude/agents/conventions-enforcer.md`) contains ALL the convention rules. This way, rules live in one place (the agent), not duplicated in the hook.
+**Why this design:** The `UserPromptSubmit` hook fires once when the user sends a prompt, injecting context that tells Claude to dispatch the conventions-enforcer agent. The agent file (`.claude/agents/conventions-enforcer.md`) contains ALL the convention rules. Writing to `.claude/settings.json` (not `.claude/settings.local.json`) means the hook is committed to git — the whole team gets automatic convention enforcement.
 
 ## Update History
 
@@ -173,6 +181,34 @@ After generating all outputs, update `.claude/pattern-forge/history.json`:
   "libraries_accepted": ["lib1"]
 }
 ```
+
+## Validation
+
+Before writing any files to disk, validate all three outputs. If ANY check fails, do NOT write files — report the failure and tell the user to re-run `/pattern-forge:generate`.
+
+**Check 1: Agent YAML frontmatter** — Verify the generated agent content starts with `---`, contains `name:` and `description:` fields, and ends with `---` before the body.
+
+**Check 2: Agent body not empty** — Verify at least one `###` heading exists under a `## Conventions` section, with content (not just whitespace) beneath it.
+
+**Check 3: Self-verification checklist not empty** — Verify at least one `- [ ]` checklist item exists in the agent.
+
+**Check 4: Hook JSON syntax** — Verify the `.claude/settings.json` content is valid JSON after merging.
+
+**Check 5: CLAUDE.md markers present** — Verify both `<!-- pattern-forge:start -->` and `<!-- pattern-forge:end -->` markers exist in the CLAUDE.md output.
+
+**Check 6: No rejected patterns leaked** — Scan the generated agent body for these phrases:
+- "do not use"
+- "do not suggest"
+- "was declined"
+- "was rejected"
+- "explicitly declined"
+- "was not chosen"
+
+To distinguish legitimate rules from leaked rejections: legitimate rules tell you what TO use instead (e.g., "do not use raw fetch — use the centralized API client"), while leaked rejections only say what NOT to use without offering an alternative in the same sentence. Only flag the latter.
+
+**If all 6 checks pass:** Write the files and add to the confirmation: "Validation: all 6 checks passed."
+
+**If any check fails:** Report exactly what failed. Do NOT write any files. Tell the user: "Validation failed. The files were not written. Please re-run `/pattern-forge:generate` to try again."
 
 ## Confirmation
 
