@@ -19,6 +19,24 @@ Check if `.claude/pattern-forge/design-choices.json` already exists. If it does,
 
 Wait for confirmation before proceeding. If the user declines, exit.
 
+## Prerequisite: Context7 MCP
+
+Before starting the flow, verify that the Context7 MCP server is available. Attempt to call `resolve-library-id` with the query "react".
+
+**If context7 MCP is not available or the call fails**, display this message and stop immediately:
+
+```
+Pattern Forge requires the Context7 MCP server for documentation lookups.
+
+Install it by adding this to your Claude Code MCP config:
+
+  context7 — https://github.com/upstash/context7
+
+Then restart Claude Code and run /pattern-forge:init again.
+```
+
+Do NOT proceed without context7. It is a hard requirement.
+
 ## Flow
 
 ### Phase 1: Detect
@@ -29,9 +47,10 @@ Follow the complete detect skill instructions:
 2. If no files found, ask what ecosystem the user is targeting
 3. If multiple ecosystems, ask which is primary
 4. Read and parse the primary dependency file
-5. Analyze in three tiers (dependency-driven patterns, complementary suggestions, best practices)
-6. Save detection report to `.claude/pattern-forge/detection-report.json`
-7. Present a summary of findings
+5. Query documentation for key libraries via context7 MCP (skip dev tools)
+6. Analyze in three tiers using documentation + your knowledge (dependency-driven patterns, complementary suggestions, best practices)
+7. Save detection report to `.claude/pattern-forge/detection-report.json`
+8. Present a summary of findings
 
 **Transition:** "Now let's choose which patterns to adopt for this project."
 
@@ -58,7 +77,7 @@ Follow the complete generate skill instructions:
 1. Read the design choices
 2. Generate the conventions agent at `.claude/agents/conventions-enforcer.md`
 3. Append/create the CLAUDE.md conventions section
-4. Create/merge the UserPromptSubmit hook in `.claude/settings.local.json`
+4. Create/merge the UserPromptSubmit hook in `.claude/settings.json` (committable to git for team sharing)
 5. Create the initial `history.json` entry
 
 **Completion:** Present the summary of generated files and confirm setup is complete.
