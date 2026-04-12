@@ -1,12 +1,15 @@
 # Pattern Forge
 
-A Claude Code plugin that detects your project's installed dependencies, proposes tailored design patterns and industry best practices, and generates a conventions-enforcing agent to keep your codebase consistent.
+**Keep your codebase consistent from day one.** Pattern Forge scans your project's dependencies, looks up real documentation via [Context7 MCP](https://github.com/upstash/context7), and proposes the best design patterns for your specific stack. Once you pick your conventions, it generates an agent that enforces them on every prompt — for you and your entire team.
+
+Instead of relying solely on AI training data (which can be outdated or miss library-specific patterns), Pattern Forge queries current documentation for each key dependency. This means the conventions it proposes are backed by what the library authors actually recommend, not what Claude thinks it remembers.
 
 ## Features
 
+- **Documentation-backed** — Queries real library docs via Context7 MCP before proposing patterns, not just AI training data
 - **Framework-agnostic** — Works with Node.js, Ruby, Python, Rust, Go, PHP, Java, Dart, Swift
-- **AI-powered** — Claude analyzes your dependencies at runtime, no static pattern database
 - **Interactive** — Wizard-style Q&A, one category at a time, you control every decision
+- **Team-wide enforcement** — Hook is committed to git, so every teammate gets convention enforcement automatically
 - **Living conventions** — Re-runnable with smart diffing and context-aware re-proposals
 - **Dependency suggestions** — Recommends complementary libraries based on your stack
 
