@@ -19,6 +19,7 @@ A Claude Code plugin that detects your project's installed dependencies, propose
 | design | `/pattern-forge:design` | Interactive pattern selection wizard |
 | generate | `/pattern-forge:generate` | Produce agent + hook + CLAUDE.md |
 | update | `/pattern-forge:update` | Detect changes, review and approve updates |
+| status | `/pattern-forge:status` | Health check, active patterns, drift detection |
 
 ## Installation
 
@@ -35,6 +36,15 @@ To update to the latest version:
 /plugin marketplace update samuelasselin-pattern-forge
 ```
 
+## Prerequisites
+
+Pattern Forge requires the **Context7 MCP server** for documentation-backed pattern detection.
+
+Install it by adding context7 to your Claude Code MCP config:
+- context7 — https://github.com/upstash/context7
+
+The plugin will check for context7 availability on every run and provide install instructions if missing.
+
 ## Quick Start
 
 1. Create your project and install your base dependencies
@@ -46,7 +56,7 @@ To update to the latest version:
 
 - `.claude/agents/conventions-enforcer.md` — Tailored agent with your chosen patterns
 - `CLAUDE.md` — Appended conventions section for passive context
-- `.claude/settings.local.json` — UserPromptSubmit hook for automatic enforcement
+- `.claude/settings.json` — UserPromptSubmit hook for automatic enforcement (committed to git for team sharing)
 
 ## Updating
 
