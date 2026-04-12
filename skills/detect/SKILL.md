@@ -7,6 +7,24 @@ description: Use when starting a new project setup or when you need to scan a pr
 
 Scan the current project's dependency files, identify the ecosystem and framework, and produce a structured analysis with three tiers: dependency-driven patterns, complementary library suggestions, and industry best practices.
 
+## Prerequisite: Context7 MCP
+
+Before running detection, verify that the Context7 MCP server is available. Attempt to call `resolve-library-id` with the query "react". 
+
+**If context7 MCP is not available or the call fails**, display this message and stop immediately:
+
+```
+Pattern Forge requires the Context7 MCP server for documentation lookups.
+
+Install it by adding this to your Claude Code MCP config:
+
+  context7 — https://github.com/upstash/context7
+
+Then restart Claude Code and run /pattern-forge:detect again.
+```
+
+Do NOT fall back to detection without documentation. Context7 is a hard requirement.
+
 ## Step 1: Scan for Dependency Files
 
 Run the detection script to find dependency files in the current project:
@@ -43,9 +61,31 @@ Read the primary dependency file and extract:
 | Java | `build.gradle` | `dependencies` block |
 | Dart | `pubspec.yaml` | `dependencies` key |
 
+## Step 2.5: Query Documentation for Key Libraries
+
+Classify each dependency into two categories:
+- **Key libraries** — Framework, UI libraries, form libraries, data fetching, state management, database clients, authentication, payments, etc. These drive design patterns.
+- **Dev tools** — Linters (eslint), formatters (prettier), test runners (jest, vitest), bundlers (webpack, vite, turbopack), type checkers (typescript). These do NOT drive design patterns. Skip doc lookup for these.
+
+For each key library:
+
+1. Call `resolve-library-id` with the library name to find its documentation source
+2. Call `query-docs` with the resolved library ID and this prompt:
+   ```
+   What are the recommended design patterns, best practices, and integration
+   patterns with [list other detected key libraries]? Focus on:
+   - Recommended project structure
+   - How this library should be used with [specific other libraries]
+   - Common patterns and anti-patterns
+   - Version-specific conventions for [detected version]
+   ```
+3. Store the documentation response — it will inform the three-tier analysis in the next step
+
+If `resolve-library-id` finds no match for a library, skip the doc lookup for that library and note it as not documentation-backed.
+
 ## Step 3: Analyze in Three Tiers
 
-Using your knowledge of the detected ecosystem and libraries, produce analysis in three tiers:
+Using the documentation retrieved in Step 2.5 combined with your own knowledge, produce analysis in three tiers. When documentation and your training knowledge conflict, documentation takes precedence. Mark each proposed pattern as `documentation_backed: true` if it was informed by real documentation from context7, or `false` if based solely on your training knowledge.
 
 ### Tier A: Dependency-Driven Patterns
 
@@ -113,7 +153,9 @@ The report must follow this schema:
       "category": "Category Name",
       "tier": "A|B|C",
       "dependencies_involved": ["dep1", "dep2"],
-      "summary": "One-line description of the pattern"
+      "summary": "One-line description of the pattern",
+      "documentation_source": "context7 library ID or null",
+      "documentation_backed": true
     }
   ]
 }
@@ -130,8 +172,3 @@ After saving the report, present a summary to the user:
 
 End with: "Detection complete. Run `/pattern-forge:design` to choose your patterns, or `/pattern-forge:init` if you haven't started the full setup yet."
 
-## After Creating
-
-Commit with: `git add skills/detect/SKILL.md && git commit -m "feat: add detect skill for dependency scanning and pattern proposal"`
-
-Work from: /Users/samuelasselin/pattern-forge
