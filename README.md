@@ -43,13 +43,17 @@ Also install the **Context7 MCP server** (required for documentation lookups):
 
 ### Step 2 — Set up your project (once per project)
 
-Create your project and install your base dependencies however you normally do:
+Works on **new or existing projects** — Pattern Forge reads whatever dependencies are already installed.
+
+**New project:** create it and install your base dependencies however you normally do:
 
 ```bash
 pnpm create next-app@latest my-app
 cd my-app
 pnpm add react-hook-form @tanstack/react-query flowbite-react
 ```
+
+**Existing project:** just `cd` into it — no prep needed. Pattern Forge scans your current `package.json` / `Gemfile` / `pyproject.toml` / etc. and proposes conventions based on what's already there. If you have existing code that doesn't match the patterns you pick, use `/pattern-forge:migrate` in Step 4 to align it.
 
 Then run:
 

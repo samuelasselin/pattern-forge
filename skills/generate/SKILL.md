@@ -123,6 +123,8 @@ Keep it concise — the CLAUDE.md section is passive context, not the full refer
 
 ## Output C: Hook Config
 
+The hook shape below is not invented — it follows the official [Claude Code hooks reference](https://code.claude.com/docs/hooks-reference#userpromptsubmit). The `UserPromptSubmit` event and the `hookSpecificOutput.additionalContext` JSON output pattern are both documented there; refer to that page as the source of truth for any hook mechanics not covered in this skill.
+
 **CRITICAL: Use the EXACT JSON below. Do NOT modify it, do NOT use a different hook type, do NOT inline convention rules in the hook. The hook's only job is to tell Claude to use the agent — the agent has the rules.**
 
 ### Migration Check
@@ -206,7 +208,25 @@ Before writing any files to disk, validate all three outputs. If ANY check fails
 
 To distinguish legitimate rules from leaked rejections: legitimate rules tell you what TO use instead (e.g., "do not use raw fetch — use the centralized API client"), while leaked rejections only say what NOT to use without offering an alternative in the same sentence. Only flag the latter.
 
-**If all 6 checks pass:** Write the files and add to the confirmation: "Validation: all 6 checks passed."
+**Check 7: Hook matches the prescribed JSON-output template** — Inspect the pattern-forge `UserPromptSubmit` hook's `command` string in the merged `.claude/settings.json`. It MUST contain ALL of these substrings:
+- `hookSpecificOutput`
+- `hookEventName`
+- `UserPromptSubmit`
+- `additionalContext`
+- `conventions-enforcer`
+
+Note: Claude Code supports two valid `UserPromptSubmit` output patterns — plain stdout (exit 0) and JSON with `hookSpecificOutput` (see [hooks reference](https://code.claude.com/docs/hooks-reference#userpromptsubmit)). Both work at runtime, but this skill prescribes the JSON form for consistency and so the `additionalContext` payload is unambiguous. If the generator produced the plain-stdout form (e.g., `printf '...'` or `echo '...'`), fail this check — the user should get the canonical template.
+
+**Check 8: Hook does not inline convention rules** — The hook's `command` string MUST be a thin pointer at the agent, not a restatement of the rules. Enforce two sub-conditions:
+
+1. **Length** — the `command` string must be under 800 characters. The canonical template is ~400 chars; anything significantly longer indicates rules were inlined.
+2. **No pattern/library leakage** — the `command` string must NOT contain any of the pattern `id`s or accepted library names from `.claude/pattern-forge/design-choices.json` (case-insensitive). If even one design-choice token appears in the hook command, the generator has leaked agent content into the hook.
+
+If either sub-condition fails, fail this check. The fix is to re-emit the hook using the EXACT canonical JSON from the "Output C: Hook Config" section above — the hook's only job is to tell Claude to launch the conventions-enforcer agent.
+
+**Check 9: Hook has required `timeout` field** — Verify the pattern-forge `UserPromptSubmit` hook entry includes `"timeout": 5`. If missing, add it before writing.
+
+**If all 9 checks pass:** Write the files and add to the confirmation: "Validation: all 9 checks passed."
 
 **If any check fails:** Report exactly what failed. Do NOT write any files. Tell the user: "Validation failed. The files were not written. Please re-run `/pattern-forge:generate` to try again."
 
