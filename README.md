@@ -23,6 +23,7 @@ Instead of relying solely on AI training data (which can be outdated or miss lib
 | generate | `/pattern-forge:generate` | Produce agent + hook + CLAUDE.md |
 | update | `/pattern-forge:update` | Detect changes, review and approve updates |
 | status | `/pattern-forge:status` | Health check, active patterns, drift detection |
+| migrate | `/pattern-forge:migrate` | Generate refactor plan to align existing code with chosen patterns |
 
 ## Installation
 
