@@ -212,8 +212,22 @@ To distinguish legitimate rules from leaked rejections: legitimate rules tell yo
 
 ## Confirmation
 
-After generating all three outputs, tell the user:
+After generating all three outputs and before presenting the confirmation, check if the project has existing source files. Look for files with these extensions in the project root and subdirectories (excluding `node_modules`, `.git`, `dist`, `build`, `.next`, `vendor`, `target`, `.venv`, `__pycache__`):
+
+`.ts`, `.tsx`, `.js`, `.jsx`, `.py`, `.rb`, `.go`, `.rs`, `.php`, `.java`, `.kt`, `.swift`, `.dart`
+
+If ANY such files exist, include this line in the confirmation output:
+
+````
+Existing code detected. To align it with your new conventions,
+run /pattern-forge:migrate to generate a refactor plan for any pattern.
+````
+
+If no source files exist (fresh project), skip this line.
+
+Tell the user:
 1. What files were created/modified (with full paths)
 2. A one-line summary of the agent's scope
 3. That the UserPromptSubmit hook will enforce conventions automatically
-4. "You can review the generated files and make manual edits if needed. Run `/pattern-forge:update` any time you add or remove dependencies."
+4. The existing-code migration hint (if applicable, as described above)
+5. "You can review the generated files and make manual edits if needed. Run `/pattern-forge:update` any time you add or remove dependencies."
