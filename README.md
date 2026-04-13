@@ -25,43 +25,100 @@ Instead of relying solely on AI training data (which can be outdated or miss lib
 | status | `/pattern-forge:status` | Health check, active patterns, drift detection |
 | migrate | `/pattern-forge:migrate` | Generate refactor plan to align existing code with chosen patterns |
 
-## Installation
+## Tutorial: Using Pattern Forge From Start to Finish
 
-In Claude Code, run:
+Follow these steps in order. Each one builds on the previous.
+
+### Step 1 — Install the plugin (once)
+
+In Claude Code:
 
 ```
 /plugin marketplace add samuelasselin/pattern-forge
 /plugin install pattern-forge@samuelasselin-pattern-forge
 ```
 
-To update to the latest version:
+Also install the **Context7 MCP server** (required for documentation lookups):
+- https://github.com/upstash/context7
+
+### Step 2 — Set up your project (once per project)
+
+Create your project and install your base dependencies however you normally do:
+
+```bash
+pnpm create next-app@latest my-app
+cd my-app
+pnpm add react-hook-form @tanstack/react-query flowbite-react
+```
+
+Then run:
 
 ```
-/plugin marketplace update samuelasselin-pattern-forge
+/pattern-forge:init
 ```
 
-## Prerequisites
+This walks you through the full setup:
+1. **Detects** your dependencies (reads `package.json`, `Gemfile`, etc.)
+2. **Looks up real docs** via Context7 for your key libraries
+3. **Asks you questions** one category at a time (forms, API layer, UI, etc.)
+4. **Generates** three things:
+   - A conventions-enforcer agent in `.claude/agents/`
+   - A conventions section in `CLAUDE.md`
+   - An auto-enforcement hook in `.claude/settings.json` (committable to git)
 
-Pattern Forge requires the **Context7 MCP server** for documentation-backed pattern detection.
+Commit these files so your whole team gets the conventions.
 
-Install it by adding context7 to your Claude Code MCP config:
-- context7 — https://github.com/upstash/context7
+### Step 3 — Start coding
 
-The plugin will check for context7 availability on every run and provide install instructions if missing.
+Just write code normally. Every prompt you send, the enforcement hook automatically launches the conventions-enforcer agent to validate your work against the patterns you chose. No extra commands needed.
 
-## Quick Start
+### Step 4 — Align your existing code (if any)
 
-1. Create your project and install your base dependencies
-2. Run `/pattern-forge:init`
-3. Answer the pattern selection questions
-4. Start coding — the conventions agent validates your work automatically
+If you ran `/pattern-forge:init` on a project that already had code, run:
 
-## What It Generates
+```
+/pattern-forge:migrate
+```
 
-- `.claude/agents/conventions-enforcer.md` — Tailored agent with your chosen patterns
-- `CLAUDE.md` — Appended conventions section for passive context
-- `.claude/settings.json` — UserPromptSubmit hook for automatic enforcement (committed to git for team sharing)
+Pick a pattern you chose during setup. The plugin scans your existing code, identifies files using a different pattern, and writes a step-by-step **migration plan** to `.claude/pattern-forge/migrations/`. Each migration includes before/after code, concrete steps, and an instruction to validate with the conventions-enforcer agent.
 
-## Updating
+You then execute the plan at your pace — manually or by asking Claude to run it.
 
-When you add or remove dependencies, run `/pattern-forge:update`. The plugin also detects dependency drift automatically on session start and reminds you to update.
+### Step 5 — Check status any time
+
+```
+/pattern-forge:status
+```
+
+Shows a health check:
+- Active patterns
+- Is the enforcement hook in place?
+- Is Context7 MCP available?
+- Have dependencies changed since last run?
+- Are there patterns with legacy code that could be migrated?
+
+Add `--full` for detailed conventions with code examples: `/pattern-forge:status --full`
+
+### Step 6 — Update when dependencies change
+
+When you add or remove dependencies (e.g., `pnpm add zod`), run:
+
+```
+/pattern-forge:update
+```
+
+It re-scans, compares against your existing conventions, and proposes new patterns from the new libraries. You approve or reject each change individually.
+
+The plugin also detects dependency drift automatically when you start a Claude Code session and reminds you to run update.
+
+---
+
+### Advanced: Run individual phases
+
+`/pattern-forge:init` chains three skills together. You can also run them separately:
+
+- `/pattern-forge:detect` — just scan dependencies and propose patterns
+- `/pattern-forge:design` — just the interactive wizard (requires detect first)
+- `/pattern-forge:generate` — just generate the agent/hook/CLAUDE.md (requires design first)
+
+Most users only need `init`, `status`, `update`, and `migrate`.
