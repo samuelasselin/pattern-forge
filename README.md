@@ -43,34 +43,25 @@ Also install the **Context7 MCP server** (required for documentation lookups):
 
 ### Step 2 — Set up your project (once per project)
 
-Works on **new or existing projects** — Pattern Forge reads whatever dependencies are already installed.
-
-**New project:** create it and install your base dependencies however you normally do:
-
-```bash
-pnpm create next-app@latest my-app
-cd my-app
-pnpm add react-hook-form @tanstack/react-query flowbite-react
-```
-
-**Existing project:** just `cd` into it — no prep needed. Pattern Forge scans your current `package.json` / `Gemfile` / `pyproject.toml` / etc. and proposes conventions based on what's already there. If you have existing code that doesn't match the patterns you pick, use `/pattern-forge:migrate` in Step 4 to align it.
-
-Then run:
+From inside any project directory — **new or existing** — run:
 
 ```
 /pattern-forge:init
 ```
 
-This walks you through the full setup:
-1. **Detects** your dependencies (reads `package.json`, `Gemfile`, etc.)
+Pattern Forge reads whatever's already installed (`package.json`, `Gemfile`, `pyproject.toml`, `Cargo.toml`, etc.), so there's no prep required. If you're starting fresh, scaffold the project first (e.g. `pnpm create next-app@latest my-app && cd my-app`) and install your base dependencies — then run `init`. If you're opening an existing repo, just `cd` into it and run `init` as-is.
+
+`init` walks you through the full setup:
+
+1. **Detects** your dependencies
 2. **Looks up real docs** via Context7 for your key libraries
 3. **Asks you questions** one category at a time (forms, API layer, UI, etc.)
-4. **Generates** three things:
+4. **Generates** three files:
    - A conventions-enforcer agent in `.claude/agents/`
    - A conventions section in `CLAUDE.md`
    - An auto-enforcement hook in `.claude/settings.json` (committable to git)
 
-Commit these files so your whole team gets the conventions.
+Commit these files so your whole team gets the conventions. If you ran `init` on a codebase that already has source files and want to bring existing code into line with your new patterns, see Step 4 (`/pattern-forge:migrate`).
 
 ### Step 3 — Start coding
 
