@@ -35,6 +35,19 @@ Read these files and compile the health check:
 4. **Context7 MCP** — Check availability by calling `resolve-library-id` with the query "react". Report available or unavailable.
 5. **Hook status** — Read `.claude/settings.json` and check if a `UserPromptSubmit` hook containing "conventions-enforcer" exists. Report active or missing.
 6. **Drift check** — Run `bash "${CLAUDE_PLUGIN_ROOT}/scripts/check-deps.sh"` and parse the output. If it reports added/removed dependencies, show drift warning. If silent, report no drift.
+7. **Migration heuristic** — For each active pattern in `design-choices.json`, do a lightweight glob based on the pattern's category:
+   - Forms & Validation → `**/*{form,Form}*.{ts,tsx,js,jsx,vue}`
+   - API Layer → `**/{api,services}/**`
+   - UI Components → `**/components/**`
+   - Testing → `**/*.{test,spec}.{ts,tsx,js,jsx}`
+   - File Organization → top-level project directory listing
+   - Other categories → skip (heuristic not available)
+
+   Exclude `node_modules`, `.git`, `dist`, `build`, `.next`, `vendor`, `target`, `.venv`, `__pycache__`.
+
+   If matching files exist for a pattern, count it toward the migration heuristic. Report: "N patterns may have legacy code" where N is the count. If zero, report "No migrations indicated."
+
+   This is a lightweight signal only — users run `/pattern-forge:migrate` for actual analysis.
 
 Present the results in this format:
 
@@ -50,6 +63,7 @@ Dependencies:  [count] tracked
 Context7 MCP:  ✅ Available | ❌ Not available
 Hook:          ✅ Active in .claude/settings.json | ❌ Missing
 Drift:         ✅ No changes | ⚠️ [N] dependencies added, [M] removed
+Migrations:    ✅ No migrations indicated | ⚠️ [N] patterns may have legacy code
 
 Active Patterns ([count]):
   • [Category]    → [choice summary]
@@ -60,6 +74,7 @@ Active Patterns ([count]):
 If drift is detected, add: `Run /pattern-forge:update to review new pattern suggestions.`
 If hook is missing, add: `Run /pattern-forge:generate to set up the enforcement hook.`
 If context7 is unavailable, add: `Install context7 MCP: https://github.com/upstash/context7`
+If migrations are indicated, add: `Run /pattern-forge:migrate to generate a refactor plan.`
 
 Always end with: `Run /pattern-forge:status --full for detailed conventions with code examples.`
 
