@@ -123,9 +123,19 @@ Keep it concise — the CLAUDE.md section is passive context, not the full refer
 
 ## Output C: Hook Config
 
-The hook shape below is not invented — it follows the official [Claude Code hooks reference](https://code.claude.com/docs/hooks-reference#userpromptsubmit). The `UserPromptSubmit` event and the `hookSpecificOutput.additionalContext` JSON output pattern are both documented there; refer to that page as the source of truth for any hook mechanics not covered in this skill.
+The hook is a **fixed constant**. It is not generated, derived, paraphrased, or customized per project. Every project gets the exact same hook entry, byte-for-byte. The hook's only job is to tell Claude to invoke the conventions-enforcer agent — all project-specific rules live in the agent file, never in the hook.
 
-**CRITICAL: Use the EXACT JSON below. Do NOT modify it, do NOT use a different hook type, do NOT inline convention rules in the hook. The hook's only job is to tell Claude to use the agent — the agent has the rules.**
+**The canonical hook entry (copy verbatim — do not retype, do not reformat, do not substitute `printf`/`echo`/`python`, do not inline project names or pattern rules):**
+
+```json
+{
+  "type": "command",
+  "command": "cat <<'HOOK_EOF'\n{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"IMPORTANT: Whether you are writing a plan or writing code, you MUST validate your work by launching the conventions-enforcer agent (from .claude/agents/) to review your plan or the files you created or modified. Do NOT skip this step — this applies to plans AND code changes.\"}}\nHOOK_EOF",
+  "timeout": 5
+}
+```
+
+The `command` field above is the canonical command string. It MUST appear in the written file exactly as shown — same characters, same `\n` escapes, same `HOOK_EOF` delimiter, same `additionalContext` text. No variation is acceptable.
 
 ### Migration Check
 
@@ -139,12 +149,13 @@ Check if `.claude/settings.json` exists.
 
 **If it exists:**
 - Read the existing content
-- Merge the `UserPromptSubmit` hook below into the existing `hooks` object, preserving all other hooks and settings
-- If a pattern-forge `UserPromptSubmit` hook already exists (check for "conventions-enforcer" in the command), replace it
+- If a pattern-forge `UserPromptSubmit` hook already exists (any entry whose `command` contains "conventions-enforcer"), remove it
+- Append the canonical hook entry (above) as a new item in `hooks.UserPromptSubmit[0].hooks`, creating `UserPromptSubmit[0]` if needed, preserving all other hooks and settings
 - Do NOT use `PostToolUse`, `PreToolUse`, or `prompt` type hooks — use ONLY `UserPromptSubmit` with `command` type as shown
+- Do NOT rewrite the canonical `command` string — copy it byte-for-byte from the block above
 
 **If it does not exist:**
-- Create `.claude/settings.json` with this exact content:
+- Create `.claude/settings.json` with this exact content (the canonical entry wrapped in the outer shape):
 
 ```json
 {
@@ -164,7 +175,7 @@ Check if `.claude/settings.json` exists.
 }
 ```
 
-**Why this design:** The `UserPromptSubmit` hook fires once when the user sends a prompt, injecting context that tells Claude to dispatch the conventions-enforcer agent. The agent file (`.claude/agents/conventions-enforcer.md`) contains ALL the convention rules. Writing to `.claude/settings.json` (not `.claude/settings.local.json`) means the hook is committed to git — the whole team gets automatic convention enforcement.
+**Why this design:** The `UserPromptSubmit` hook fires once when the user sends a prompt, injecting context that tells Claude to dispatch the conventions-enforcer agent. The agent file (`.claude/agents/conventions-enforcer.md`) contains ALL the convention rules. Writing to `.claude/settings.json` (not `.claude/settings.local.json`) means the hook is committed to git — the whole team gets automatic convention enforcement. Keeping the hook a fixed constant (rather than generating it) means every project gets the same tested behavior, and there is no surface area for the generator to leak project-specific content into the hook.
 
 ## Update History
 
@@ -208,25 +219,23 @@ Before writing any files to disk, validate all three outputs. If ANY check fails
 
 To distinguish legitimate rules from leaked rejections: legitimate rules tell you what TO use instead (e.g., "do not use raw fetch — use the centralized API client"), while leaked rejections only say what NOT to use without offering an alternative in the same sentence. Only flag the latter.
 
-**Check 7: Hook matches the prescribed JSON-output template** — Inspect the pattern-forge `UserPromptSubmit` hook's `command` string in the merged `.claude/settings.json`. It MUST contain ALL of these substrings:
-- `hookSpecificOutput`
-- `hookEventName`
-- `UserPromptSubmit`
-- `additionalContext`
-- `conventions-enforcer`
+**Check 7: Hook `command` string is byte-for-byte identical to the canonical template** — Extract the pattern-forge `UserPromptSubmit` hook entry from the merged `.claude/settings.json` (the entry whose command contains "conventions-enforcer"). Its `command` field MUST equal EXACTLY this string, with no differences (not even whitespace, escaping, or trailing content):
 
-Note: Claude Code supports two valid `UserPromptSubmit` output patterns — plain stdout (exit 0) and JSON with `hookSpecificOutput` (see [hooks reference](https://code.claude.com/docs/hooks-reference#userpromptsubmit)). Both work at runtime, but this skill prescribes the JSON form for consistency and so the `additionalContext` payload is unambiguous. If the generator produced the plain-stdout form (e.g., `printf '...'` or `echo '...'`), fail this check — the user should get the canonical template.
+```
+cat <<'HOOK_EOF'
+{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"IMPORTANT: Whether you are writing a plan or writing code, you MUST validate your work by launching the conventions-enforcer agent (from .claude/agents/) to review your plan or the files you created or modified. Do NOT skip this step — this applies to plans AND code changes."}}
+HOOK_EOF
+```
 
-**Check 8: Hook does not inline convention rules** — The hook's `command` string MUST be a thin pointer at the agent, not a restatement of the rules. Enforce two sub-conditions:
+(In the JSON file this is stored as a single-line string with `\n` escapes and `\"` escapes, matching the JSON block shown in "Output C: Hook Config".)
 
-1. **Length** — the `command` string must be under 800 characters. The canonical template is ~400 chars; anything significantly longer indicates rules were inlined.
-2. **No pattern/library leakage** — the `command` string must NOT contain any of the pattern `id`s or accepted library names from `.claude/pattern-forge/design-choices.json` (case-insensitive). If even one design-choice token appears in the hook command, the generator has leaked agent content into the hook.
+Perform an exact string comparison. Any deviation — using `printf`/`echo`/`python` instead of `cat`, renaming the heredoc delimiter, changing the `additionalContext` text, adding project name, adding rule summaries, reformatting — fails this check.
 
-If either sub-condition fails, fail this check. The fix is to re-emit the hook using the EXACT canonical JSON from the "Output C: Hook Config" section above — the hook's only job is to tell Claude to launch the conventions-enforcer agent.
+If this check fails: the generator produced a non-canonical command. Do NOT attempt to patch the differences. Discard the generated hook entirely and re-emit the canonical hook verbatim from "Output C: Hook Config".
 
-**Check 9: Hook has required `timeout` field** — Verify the pattern-forge `UserPromptSubmit` hook entry includes `"timeout": 5`. If missing, add it before writing.
+**Check 8: Hook has required `timeout` field** — Verify the pattern-forge `UserPromptSubmit` hook entry includes `"timeout": 5`. If missing, add it before writing.
 
-**If all 9 checks pass:** Write the files and add to the confirmation: "Validation: all 9 checks passed."
+**If all 8 checks pass:** Write the files and add to the confirmation: "Validation: all 8 checks passed."
 
 **If any check fails:** Report exactly what failed. Do NOT write any files. Tell the user: "Validation failed. The files were not written. Please re-run `/pattern-forge:generate` to try again."
 
